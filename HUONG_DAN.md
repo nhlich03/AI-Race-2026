@@ -75,6 +75,37 @@ HCM0421/
 
 ---
 
+## 1c. Đám điểm 3D (point cloud) trong `sparse/0/` từ đâu ra?
+
+Trong `train/sparse/0/` có một **point cloud** (đám mây điểm 3D). Nó **không phải mình tạo** — BTC đã chạy sẵn công cụ **COLMAP** trên bộ ảnh train bằng kỹ thuật **SfM (Structure from Motion)** — "dựng cấu trúc 3D từ nhiều ảnh".
+
+**COLMAP làm 4 bước:**
+```
+1. Tìm đặc trưng : trên mỗi ảnh dò các điểm nổi bật (góc mái, mép cửa, cạnh anten…)
+2. Ghép cặp       : điểm ở ảnh A trùng điểm nào ở ảnh B,C… (cùng 1 vật thể thật)
+3. Tam giác hóa   : 1 điểm thấy từ ≥2 camera đã biết góc → giao 2 tia → ra tọa độ 3D (x,y,z)
+4. Tối ưu tổng thể: chỉnh lại đồng thời vị trí camera + điểm 3D cho khớp nhất
+```
+
+**COLMAP cho ra 2 thứ (đều trong `sparse/0/`):**
+- Vị trí + hướng từng camera (`cameras.bin`, `images.bin`).
+- **Đám điểm 3D** (`points3D.bin`/`.ply`) — point cloud cần hỏi.
+
+**Nó như nào:**
+- Thưa (**sparse**): chỉ vài trăm nghìn điểm (vd HCM0421 = **171.304 điểm** — chính là dòng `Number of points at initialisation: 171304` khi train). Đủ phác hình, chưa phải bề mặt kín — nhìn như đám bụi 3D lờ mờ ra dáng cảnh.
+- Mỗi điểm có tọa độ **(x, y, z)** + **màu RGB** (lấy từ pixel ảnh gốc).
+
+**Liên quan gì tới 3DGS → nó là ĐIỂM XUẤT PHÁT:**
+```
+Point cloud COLMAP (171k điểm thưa)   →  TRAIN 3DGS  →  vài triệu Gaussian dày đặc
+= "hạt giống" ban đầu                     (nhiều iter)     = model vẽ ảnh đẹp
+```
+- 3DGS không train từ số 0: mỗi điểm 3D thành **1 hạt Gaussian ban đầu** (đúng chỗ, sẵn màu).
+- Khi train, nó **nhân bản & tách nhỏ** hạt ở chỗ thiếu chi tiết (*densification*) → từ 171k điểm nở ra hàng triệu Gaussian.
+- Chỗ COLMAP ít điểm (cột anten mảnh, bầu trời) chính là chỗ 3DGS hay lỗi "bóng ma" — đúng như ảnh render thấy lúc test.
+
+---
+
 ## 2. Cách mình giải: 3D Gaussian Splatting (3DGS)
 
 Mình dùng đúng phương pháp BTC gợi ý làm baseline: **3D Gaussian Splatting** (repo chính thức của INRIA).
