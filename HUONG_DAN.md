@@ -33,6 +33,48 @@ Score = 0.4·(1 − LPIPS) + 0.3·SSIM + 0.3·PSNR_norm
 
 ---
 
+## 1b. Phân tích dữ liệu thực tế (data có gì)
+
+Bộ dữ liệu (`VAI_NVS_DATA_ROUND2.zip`, ~1.2GB) có **7 scene**, chia 2 loại:
+- **5 scene trạm BTS thật** (`HCM0421, HCM0539, HCM0540, HCM0644, HCM0674`) — ảnh drone DJI chụp khu dân cư dày đặc ở TP.HCM, tên ảnh kiểu `DJI_2024...._V.JPG`.
+- **2 scene benchmark** (`bonsai, chair`) — vật thể chụp cận, tên ảnh kiểu `frame_000xxx.jpg`.
+
+| Scene | Loại | Ảnh train | Góc test (phải vẽ) | Camera model | Kích thước ảnh | Tiêu cự fx | Méo (k) |
+|---|---|---:|---:|---|---|---:|---:|
+| HCM0421 | BTS drone | 240 | 60 | SIMPLE_RADIAL | 1320×989 | 926.4 | 0.0089 |
+| HCM0539 | BTS drone | 240 | 60 | SIMPLE_RADIAL | 1320×989 | 925.4 | 0.0081 |
+| HCM0540 | BTS drone | 240 | 60 | SIMPLE_RADIAL | 1320×989 | 926.7 | 0.0089 |
+| HCM0644 | BTS drone | 240 | 60 | SIMPLE_RADIAL | 1320×989 | 925.5 | 0.0090 |
+| HCM0674 | BTS drone | 240 | 60 | SIMPLE_RADIAL | 1320×989 | 925.3 | 0.0088 |
+| bonsai | benchmark | 248 | 28 | SIMPLE_PINHOLE | 1920×1080 | 1650.0 | – |
+| chair | benchmark | 205 | 58 | SIMPLE_PINHOLE | 720×1280 | 1114.0 | – |
+| **Tổng** | | **1653** | **386** | | | | |
+
+**Cấu trúc 1 scene:**
+```
+HCM0421/
+├── README.txt                    # mô tả ngắn (train/test 80/20, scale 1/4)
+├── train/
+│   ├── images/                   # 240 ảnh .JPG
+│   └── sparse/0/                 # kết quả COLMAP:
+│       ├── cameras.bin           #   thông số camera (tiêu cự, méo…)
+│       ├── images.bin            #   vị trí + hướng từng camera
+│       ├── points3D.bin/.ply     #   đám điểm 3D thưa (init cho 3DGS)
+│       └── rigs.bin, frames.bin  #   metadata COLMAP bản mới (không dùng tới)
+└── test/
+    └── test_poses.csv            # danh sách góc nhìn cần vẽ (KHÔNG có ảnh gốc)
+```
+
+**Những điểm quan trọng rút ra từ data:**
+1. **Phải vẽ tổng cộng 386 ảnh** (5 scene BTS × 60 + bonsai 28 + chair 58). Thiếu bất kỳ ảnh nào của scene nào = scene đó mất điểm.
+2. **`test/` KHÔNG có ảnh gốc** → không tự chấm điểm trực tiếp được. Chỉ soi ảnh bằng mắt, hoặc giữ lại một phần train làm tập kiểm để ước lượng.
+3. **Điểm chính (cx, cy) của mọi scene đều nằm đúng tâm ảnh** (vd 660 = 1320/2, 494.5 = 989/2) → thuận lợi, bộ vẽ 3DGS gốc render đúng, không bị lệch.
+4. **5 scene BTS có méo ống kính rất nhỏ (k ≈ 0.008–0.009)** → mình bỏ đi, coi như PINHOLE (xem mục 5). 2 scene benchmark vốn đã không méo.
+5. **`images.bin` liệt kê nhiều ảnh hơn số file thật** (vd HCM0421: 350 đăng ký nhưng chỉ 240 file) vì nó chứa cả ảnh test + ảnh COLMAP đăng ký nhưng BTC không phát → mình lọc bỏ (xem mục 5).
+6. **Scale 1/4**: ảnh đã được BTC thu nhỏ còn 1/4 gốc → nhẹ, train nhanh.
+
+---
+
 ## 2. Cách mình giải: 3D Gaussian Splatting (3DGS)
 
 Mình dùng đúng phương pháp BTC gợi ý làm baseline: **3D Gaussian Splatting** (repo chính thức của INRIA).
