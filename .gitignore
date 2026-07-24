@@ -9,6 +9,9 @@ data/
 # Training + render outputs
 output/
 submission/
+submission_round1*/
+prepared/
+_peek/
 
 # Python
 __pycache__/
