@@ -1,0 +1,10 @@
+# torch / torchvision come preinstalled on Kaggle GPU images — do NOT reinstall.
+# These are the extra deps our scripts + the 3DGS repo need.
+plyfile
+lpips
+scikit-image
+numpy
+Pillow
+tqdm
+# The CUDA rasterizer submodules are built from source by setup_kaggle.sh:
+#   diff-gaussian-rasterization, simple-knn

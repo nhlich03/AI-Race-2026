@@ -1,0 +1,16 @@
+# Cloned baseline repo (fetched by setup_kaggle.sh)
+third_party/
+
+# Contest data — never commit (rules forbid redistributing it, and it's huge)
+data/
+*.zip
+*.crdownload
+
+# Training + render outputs
+output/
+submission/
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
