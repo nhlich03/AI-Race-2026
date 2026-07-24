@@ -53,8 +53,12 @@ def main():
     ap.add_argument("--sh_degree", type=int, default=3)
     ap.add_argument("--white_bg", action="store_true", help="Use white background instead of black")
     ap.add_argument("--name_mode", choices=["exact", "png"], default="exact",
-                    help="'exact' = write the CSV image_name verbatim (content is still PNG); "
+                    help="'exact' = write the CSV image_name verbatim; "
                          "'png' = replace the extension with .png")
+    ap.add_argument("--img_format", choices=["png", "jpeg"], default="png",
+                    help="Encode output as PNG (lossless, big) or JPEG (much smaller, "
+                         "use to stay under submission size limits)")
+    ap.add_argument("--jpeg_quality", type=int, default=95, help="JPEG quality when --img_format jpeg")
     args = ap.parse_args()
 
     sys.path.insert(0, os.path.abspath(args.gs_repo))
@@ -113,9 +117,16 @@ def main():
                 img = render(cam, gaussians, pipe, bg)["render"]
             arr = (torch.clamp(img, 0.0, 1.0).permute(1, 2, 0).cpu().numpy() * 255.0 + 0.5).astype(np.uint8)
 
-            fname = name if args.name_mode == "exact" else os.path.splitext(name)[0] + ".png"
-            # Always encode PNG (lossless) regardless of the filename extension.
-            Image.fromarray(arr).save(os.path.join(args.out, fname), format="PNG")
+            if args.name_mode == "png":
+                fname = os.path.splitext(name)[0] + ".png"
+            else:
+                fname = name  # verbatim CSV name (extension may be .JPG)
+            im = Image.fromarray(arr)
+            if args.img_format == "jpeg":
+                im.save(os.path.join(args.out, fname), format="JPEG",
+                        quality=args.jpeg_quality, optimize=True, subsampling=0)
+            else:
+                im.save(os.path.join(args.out, fname), format="PNG")
             n += 1
 
     print(f"[render] wrote {n} images to {args.out}")

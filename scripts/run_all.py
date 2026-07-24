@@ -65,6 +65,9 @@ def main():
     ap.add_argument("--white_bg", action="store_true")
     ap.add_argument("--name_mode", choices=["exact", "png"], default="exact",
                     help="Output filename mode passed to render_test_poses.py")
+    ap.add_argument("--img_format", choices=["png", "jpeg"], default="jpeg",
+                    help="Output image format (jpeg keeps the zip under submission size limits)")
+    ap.add_argument("--jpeg_quality", type=int, default=95)
     ap.add_argument("--only", nargs="*", default=None, help="Restrict to these scene names")
     ap.add_argument("--skip_trained", action="store_true", help="Skip scenes whose model already exists")
     ap.add_argument("--gpu", default=None, help="Pin CUDA_VISIBLE_DEVICES (e.g. 0 or 1) for manual 2-GPU split")
@@ -123,6 +126,8 @@ def main():
             "--iteration", str(args.iterations),
             "--sh_degree", str(args.sh_degree),
             "--name_mode", args.name_mode,
+            "--img_format", args.img_format,
+            "--jpeg_quality", str(args.jpeg_quality),
         ]
         if args.white_bg:
             render_cmd.append("--white_bg")
