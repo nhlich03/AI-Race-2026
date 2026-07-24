@@ -21,6 +21,9 @@ import glob
 import argparse
 import subprocess
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from prepare_pinhole import prepare_source
+
 
 def find_scenes(data_root):
     scenes = []
@@ -53,6 +56,8 @@ def main():
     ap.add_argument("--data_root", required=True)
     ap.add_argument("--output", default="output")
     ap.add_argument("--submission", default="submission")
+    ap.add_argument("--prepared", default="prepared",
+                    help="Where to write PINHOLE-converted, file-filtered source dirs")
     ap.add_argument("--iterations", type=int, default=30000,
                     help="Use 7000 for a fast first baseline, 30000 for the full run")
     ap.add_argument("--sh_degree", type=int, default=3)
@@ -94,10 +99,12 @@ def main():
         if args.skip_trained and os.path.isfile(done_marker):
             print(f"[train] {name} already trained, skipping")
         else:
+            # Preprocess: SIMPLE_RADIAL -> PINHOLE + drop images.bin entries with no file.
+            prepared_source = prepare_source(source, os.path.join(args.prepared, name))
             # No --eval flag: all images are used for training (no 1/8 holdout).
             train_cmd = [
                 sys.executable, os.path.join(args.gs_repo, "train.py"),
-                "-s", source,
+                "-s", prepared_source,
                 "-m", model_out,
                 "--iterations", str(args.iterations),
                 "--sh_degree", str(args.sh_degree),
