@@ -25,7 +25,7 @@ if [ -d "$GS_DIR/submodules/fused-ssim" ]; then
   pip install -q "$GS_DIR/submodules/fused-ssim" || echo "fused-ssim build skipped"
 fi
 
-pip install -q plyfile lpips scikit-image tensorboard
+pip install -q plyfile lpips scikit-image
 
 echo "Setup done. gaussian-splatting at: $GS_DIR"
 python -c "import torch; print('torch', torch.__version__, 'cuda', torch.version.cuda, 'gpus', torch.cuda.device_count())"
