@@ -68,12 +68,17 @@ def main():
     ap.add_argument("--img_format", choices=["png", "jpeg"], default="jpeg",
                     help="Output image format (jpeg keeps the zip under submission size limits)")
     ap.add_argument("--jpeg_quality", type=int, default=95)
+    ap.add_argument("--low_mem", action="store_true",
+                    help="Grow fewer Gaussians (densify_grad_threshold 0.0003) to avoid CUDA OOM "
+                         "on 16GB GPUs. Slightly less detail; use if a scene still OOMs.")
     ap.add_argument("--only", nargs="*", default=None, help="Restrict to these scene names")
     ap.add_argument("--skip_trained", action="store_true", help="Skip scenes whose model already exists")
     ap.add_argument("--gpu", default=None, help="Pin CUDA_VISIBLE_DEVICES (e.g. 0 or 1) for manual 2-GPU split")
     args = ap.parse_args()
 
     env = dict(os.environ)
+    # Reduce CUDA memory fragmentation (fixes many "reserved but unallocated" OOMs on 16GB GPUs).
+    env.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
     if args.gpu is not None:
         env["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
 
@@ -115,6 +120,8 @@ def main():
                 "--test_iterations", "-1",
                 "--save_iterations", str(args.iterations),
             ]
+            if args.low_mem:
+                train_cmd += ["--densify_grad_threshold", "0.0003"]
             run(train_cmd, env=env)
 
         render_cmd = [
