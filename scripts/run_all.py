@@ -68,6 +68,10 @@ def main():
     ap.add_argument("--img_format", choices=["png", "jpeg"], default="jpeg",
                     help="Output image format (jpeg keeps the zip under submission size limits)")
     ap.add_argument("--jpeg_quality", type=int, default=95)
+    ap.add_argument("--eval", action="store_true",
+                    help="Hold out 1/8 of train views for validation → logs PSNR/SSIM to "
+                         "TensorBoard at milestones. Costs a bit of training data; OMIT for "
+                         "the final full-data submission run.")
     ap.add_argument("--only", nargs="*", default=None, help="Restrict to these scene names")
     ap.add_argument("--skip_trained", action="store_true", help="Skip scenes whose model already exists")
     ap.add_argument("--gpu", default=None, help="Pin CUDA_VISIBLE_DEVICES (e.g. 0 or 1) for manual 2-GPU split")
@@ -104,7 +108,7 @@ def main():
         else:
             # Preprocess: SIMPLE_RADIAL -> PINHOLE + drop images.bin entries with no file.
             prepared_source = prepare_source(source, os.path.join(args.prepared, name))
-            # No --eval flag: all images are used for training (no 1/8 holdout).
+            # train.py always logs the training loss curve to TensorBoard (model dir).
             train_cmd = [
                 sys.executable, os.path.join(args.gs_repo, "train.py"),
                 "-s", prepared_source,
@@ -112,9 +116,17 @@ def main():
                 "--iterations", str(args.iterations),
                 "--sh_degree", str(args.sh_degree),
                 "--data_device", args.data_device,
-                "--test_iterations", "-1",
                 "--save_iterations", str(args.iterations),
             ]
+            if args.eval:
+                # Hold out 1/8 of views; evaluate at milestones so TensorBoard also gets
+                # validation PSNR/SSIM curves (not just training loss).
+                it = args.iterations
+                milestones = sorted({it // 4, it // 2, (it * 3) // 4, it} - {0})
+                train_cmd += ["--eval", "--test_iterations", *map(str, milestones)]
+            else:
+                # No holdout: all images train (best for final submission). No val curve.
+                train_cmd += ["--test_iterations", "-1"]
             run(train_cmd, env=env)
 
         render_cmd = [
