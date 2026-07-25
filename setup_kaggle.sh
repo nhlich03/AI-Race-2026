@@ -3,8 +3,13 @@
 # notebook settings first). Compiles the CUDA rasterizer against Kaggle's torch.
 set -euo pipefail
 
-# T4 = sm_75. If you switch to P100 use "6.0"; A4000 (contest ref HW) is "8.6".
-export TORCH_CUDA_ARCH_LIST="${TORCH_CUDA_ARCH_LIST:-7.5}"
+# Build the CUDA extensions for the GPU actually present.
+# (T4=7.5, P100=6.0, A4000=8.6, A100=8.0, H100=9.0). Auto-detect from torch;
+# override by exporting TORCH_CUDA_ARCH_LIST yourself before running.
+if [ -z "${TORCH_CUDA_ARCH_LIST:-}" ]; then
+  export TORCH_CUDA_ARCH_LIST="$(python -c 'import torch;print("%d.%d"%torch.cuda.get_device_capability())' 2>/dev/null || echo 7.5)"
+fi
+echo "Building CUDA extensions for arch: $TORCH_CUDA_ARCH_LIST"
 
 GS_DIR="third_party/gaussian-splatting"
 # Pin a commit for reproducibility; override with GS_COMMIT=<hash> if the API drifts.
