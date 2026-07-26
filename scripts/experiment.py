@@ -50,10 +50,14 @@ def main():
     ap.add_argument("--psnr_max", type=float, default=40.0)
     ap.add_argument("--results", default="results/metrics.csv")
     ap.add_argument("--workroot", default=".", help="root for output/prepared/eval_pred/submission dirs")
+    ap.add_argument("--sub_name", default=None,
+                    help="Submission namespace (default = exp name). Use the SAME --sub_name across "
+                         "several submission runs to merge per-scene-type configs into one zip.")
     args = ap.parse_args()
 
     cfg = registry.get(args.exp)
     iterations = args.iterations if args.iterations is not None else cfg["iterations"]
+    sub_name = args.sub_name or args.exp   # submission namespace (merge several exps into one zip)
 
     env = dict(os.environ)
     env.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
@@ -120,12 +124,12 @@ def main():
             if poses is None:
                 print(f"[warn] no test_poses.csv for {name}, skipping render", file=sys.stderr)
                 continue
-            sub_dir = d("submission", args.exp, name)
+            sub_dir = d("submission", sub_name, name)
             run(common_render + ["--poses", poses, "--out", sub_dir], env=env)
 
     if args.mode == "submission":
-        sub_root = d("submission", args.exp)
-        out_zip = d(f"submission_{args.exp}.zip")
+        sub_root = d("submission", sub_name)
+        out_zip = d(f"submission_{sub_name}.zip")
         run([sys.executable, os.path.join(here, "make_submission.py"),
              "--submission", sub_root, "--out", out_zip], env=env)
         print(f"\nSubmission zip: {out_zip}")
