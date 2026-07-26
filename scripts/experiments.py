@@ -20,15 +20,17 @@ EXPERIMENTS = {
         "train_args": [],
     },
 
-    # Per-image exposure affine — helps when drone shots vary in brightness.
-    # NOTE: exact flag names/defaults MUST be verified against the cloned repo's
-    # arguments/__init__.py (grep exposure_lr). If baseline already trains exposure
-    # by default, flip this experiment to disable it (--exposure_lr_init 0) instead.
+    # Per-image exposure affine — compensates brightness differences between drone
+    # shots during training. Verified in this repo: exposure params are always
+    # optimized, but only APPLIED when --train_test_exp is set (default off = baseline
+    # has no exposure compensation). Novel test poses still render with identity
+    # exposure (our render_test_poses uses use_trained_exp=False), so the benefit is a
+    # cleaner base model, not test-time correction.
     "exposure": {
         "iterations": 30000,
         "sh_degree": 3,
         "prepare": {},
-        "train_args": ["--exposure_lr_init", "0.001", "--exposure_lr_final", "0.0001"],
+        "train_args": ["--train_test_exp"],
     },
 
     # Denser initialization — inject random points to help sparse regions
