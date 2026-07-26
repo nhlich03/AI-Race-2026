@@ -27,7 +27,10 @@ _LPIPS_NET = None
 def _get_lpips(net="alex"):
     global _LPIPS_NET
     if _LPIPS_NET is None:
-        dev = "cuda" if torch.cuda.is_available() else "cpu"
+        # Default to CPU: LPIPS conv layers hit cuDNN CUDNN_STATUS_NOT_INITIALIZED on
+        # MIG GPUs, and eval is not the bottleneck (training dominates). Override with
+        # LPIPS_DEVICE=cuda where cuDNN works fine.
+        dev = os.environ.get("LPIPS_DEVICE", "cpu")
         _LPIPS_NET = _lpips_mod.LPIPS(net=net).to(dev).eval()
     return _LPIPS_NET
 
