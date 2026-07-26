@@ -41,6 +41,25 @@ EXPERIMENTS = {
         "prepare": {"random_points": 100000},
         "train_args": [],
     },
+
+    # MORE DETAIL: densify more aggressively (lower grad threshold, default 0.0002)
+    # -> ~2x+ Gaussians -> sharper renders. Feasible here because the H100 has 40GB;
+    # 16GB GPUs would OOM. Evidence (7k->30k gave +4) says detail drives the score,
+    # so this is the strongest cheap bet.
+    "detail": {
+        "iterations": 30000,
+        "sh_degree": 3,
+        "prepare": {},
+        "train_args": ["--densify_grad_threshold", "0.0001"],
+    },
+
+    # Even more detail: aggressive densify + densify for longer (until 20k vs 15k).
+    "detail_xl": {
+        "iterations": 30000,
+        "sh_degree": 3,
+        "prepare": {},
+        "train_args": ["--densify_grad_threshold", "0.0001", "--densify_until_iter", "20000"],
+    },
 }
 
 
