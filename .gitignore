@@ -11,6 +11,8 @@ output/
 submission/
 submission_round1*/
 prepared/
+eval_pred/
+results/
 _peek/
 
 # Python
