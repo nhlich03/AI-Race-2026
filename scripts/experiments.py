@@ -60,6 +60,16 @@ EXPERIMENTS = {
         "prepare": {},
         "train_args": ["--densify_grad_threshold", "0.0001", "--densify_until_iter", "20000"],
     },
+
+    # "Quality" push (pure vanilla 3DGS flags): higher SH degree (4 vs 3) for richer
+    # view-dependent color + more & longer densification for coverage (black-streak /
+    # center-blur fix). Heavier on VRAM — OK on the 40GB H100.
+    "quality": {
+        "iterations": 30000,
+        "sh_degree": 4,
+        "prepare": {},
+        "train_args": ["--densify_grad_threshold", "0.0001", "--densify_until_iter", "22000"],
+    },
 }
 
 
