@@ -62,13 +62,22 @@ EXPERIMENTS = {
     },
 
     # "Quality" push (pure vanilla 3DGS flags): higher SH degree (4 vs 3) for richer
-    # view-dependent color + more & longer densification for coverage (black-streak /
-    # center-blur fix). Heavier on VRAM — OK on the 40GB H100.
+    # view-dependent color. Default densification (sh4 + aggressive densify OOMs 40GB;
+    # sh4 alone ~1.56x baseline VRAM, fits — isolates the sh4 effect).
     "quality": {
         "iterations": 30000,
         "sh_degree": 4,
         "prepare": {},
-        "train_args": ["--densify_grad_threshold", "0.0001", "--densify_until_iter", "22000"],
+        "train_args": [],
+    },
+
+    # sh4 with a MILD densify bump (grad 0.00015). Slightly more Gaussians than default
+    # but far below the OOM'd 0.0001+until22000. Try only if 'quality' has VRAM headroom.
+    "quality_plus": {
+        "iterations": 30000,
+        "sh_degree": 4,
+        "prepare": {},
+        "train_args": ["--densify_grad_threshold", "0.00015"],
     },
 }
 
